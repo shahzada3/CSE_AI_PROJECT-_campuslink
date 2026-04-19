@@ -18,12 +18,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
  
 SECRET_KEY = 'django-insecure-campuslink-change-this-in-production-2024'
  
-DEBUG = os.environ.get('DEBUG', 'False')
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
  
 ALLOWED_HOSTS = ['*']
  
 INSTALLED_APPS = [
-    'daphne',
+    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
