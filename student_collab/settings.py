@@ -112,3 +112,9 @@ LOGIN_REDIRECT_URL = '/posts/feed/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
  
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.onrender.com"
+]
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
