@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}{{ action }} Project – CampusLink{% endblock %}
+{% block content %}
+<div style="max-width:600px; margin:0 auto;">
+  <div class="page-header-row">
+    <div class="page-header"><h1>{{ action }} Project</h1></div>
+    <a href="{% url 'project_list' %}" class="btn"><i class="fas fa-arrow-left"></i> Back</a>
+  </div>
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Project Name *</label>
+        <input type="text" name="name" class="form-control" placeholder="e.g. AI Study Planner" required value="{{ form.name.value|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description *</label>
+        <textarea name="description" class="form-control" rows="4" placeholder="What is this project about? What problem does it solve?" required>{{ form.description.value|default:'' }}</textarea>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select name="status" class="form-control">
+            <option value="planning">Planning</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+            <option value="paused">Paused</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tech Stack</label>
+          <input type="text" name="tech_stack" class="form-control" placeholder="e.g. Django, React, ML" value="{{ form.tech_stack.value|default:'' }}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">GitHub Link (optional)</label>
+        <input type="url" name="github_link" class="form-control" placeholder="https://github.com/..." value="{{ form.github_link.value|default:'' }}">
+      </div>
+      <div style="display:flex; gap:10px; margin-top:8px;">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> {{ action }} Project</button>
+        <a href="{% url 'project_list' %}" class="btn">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Study Groups – CampusLink{% endblock %}
+{% block content %}
+<div class="page-header-row">
+  <div class="page-header">
+    <h1>Study Groups</h1>
+    <p>Join groups, discuss topics, and collaborate</p>
+  </div>
+  <a href="{% url 'group_create' %}" class="btn btn-primary">
+    <i class="fas fa-plus"></i> Create Group
+  </a>
+</div>
+
+{% if my_groups %}
+  <div class="section-label">My Groups</div>
+  <div class="groups-grid">
+    {% for group in my_groups %}
+      <div class="group-card">
+        <div class="group-cover" style="background: linear-gradient(135deg, hsl({{ group.id|add:'200' }}, 60%, 45%), hsl({{ group.id|add:'240' }}, 60%, 55%));">
+          <i class="fas fa-users" style="font-size:28px;"></i>
+        </div>
+        <div class="group-body">
+          <div class="group-name">{{ group.name }}</div>
+          <div class="group-desc">{{ group.description|default:"No description." }}</div>
+          <div class="group-footer">
+            <span class="member-count"><i class="fas fa-user"></i> {{ group.member_count }} members</span>
+            <a href="{% url 'group_detail' group.id %}" class="btn btn-sm btn-primary">Open</a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% if all_groups %}
+  <div class="section-label" style="margin-top:28px;">Explore Groups</div>
+  <div class="groups-grid">
+    {% for group in all_groups %}
+      <div class="group-card">
+        <div class="group-cover" style="background: linear-gradient(135deg, hsl({{ group.id|add:'150' }}, 50%, 40%), hsl({{ group.id|add:'190' }}, 50%, 50%));">
+          <i class="fas fa-users" style="font-size:28px;"></i>
+        </div>
+        <div class="group-body">
+          <div class="group-name">{{ group.name }}</div>
+          <div class="group-desc">{{ group.description|default:"No description." }}</div>
+          <div class="group-footer">
+            <span class="member-count"><i class="fas fa-user"></i> {{ group.member_count }} members</span>
+            <a href="{% url 'join_group' group.id %}" class="btn btn-sm btn-primary">Join</a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% if not my_groups and not all_groups %}
+  <div class="empty-state card">
+    <i class="fas fa-users"></i>
+    <p>No groups yet. Be the first to create one!</p>
+    <a href="{% url 'group_create' %}" class="btn btn-primary" style="margin-top:12px;">Create Group</a>
+  </div>
+{% endif %}
+{% endblock %}

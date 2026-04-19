@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}Find People – CampusLink{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Find People</h1>
+  <p>Connect with students from your campus</p>
+</div>
+
+<form method="get" class="search-bar">
+  <input type="text" name="q" class="search-input"
+         placeholder="Search by name or college..."
+         value="{{ query }}">
+  <button type="submit" class="btn btn-primary">
+    <i class="fas fa-search"></i> Search
+  </button>
+</form>
+
+{% if users %}
+  <div class="people-grid">
+    {% for u in users %}
+      <div class="person-card">
+
+        <div class="person-avatar">
+          {% if u.profile_pic %}
+            <img src="{{ u.profile_pic.url }}" alt="{{ u.username }}">
+          {% else %}
+            {{ u.username|first|upper }}
+          {% endif %}
+        </div>
+
+        <div class="person-name">
+          {{ u.get_full_name|default:u.username }}
+        </div>
+
+        <div class="person-info">
+          {% if u.branch %}{{ u.branch }}{% endif %}
+          {% if u.college %} • {{ u.college }}{% endif %}
+        </div>
+
+        {% if u.skills_list %}
+          <div class="skills-list" style="justify-content:center;margin-top:8px;">
+            {% for skill in u.skills_list %}
+              {% if forloop.counter <= 3 %}
+                <span class="skill-tag" style="font-size:11px;">
+                  {{ skill }}
+                </span>
+              {% endif %}
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div style="display:flex;gap:6px;margin-top:12px;justify-content:center;">
+          <a href="{% url 'user_profile' u.username %}" class="btn btn-sm">
+            <i class="fas fa-user"></i> Profile
+          </a>
+          <a href="{% url 'chat_room' u.id %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-comment"></i> Chat
+          </a>
+        </div>
+
+      </div>
+    {% endfor %}
+  </div>
+
+{% else %}
+  <div class="empty-state card">
+    <i class="fas fa-user-friends"></i>
+    <p>No students found{% if query %} for "{{ query }}"{% endif %}.</p>
+  </div>
+{% endif %}
+
+{% endblock %}

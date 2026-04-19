@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}Feed – CampusLink{% endblock %}
+{% block content %}
+<div class="feed-layout">
+
+  <!-- Main Feed Column -->
+  <div>
+    <!-- Composer -->
+    <div class="post-composer">
+      <form method="post" action="{% url 'create_post' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="composer-row">
+          <div class="composer-avatar">
+            {% if request.user.profile_pic %}
+              <img src="{{ request.user.profile_pic.url }}" alt="">
+            {% else %}
+              {{ request.user.username|first|upper }}
+            {% endif %}
+          </div>
+          <textarea name="content" class="composer-input" placeholder="What's on your mind? Share notes, find teammates..."></textarea>
+        </div>
+        <div class="composer-actions">
+          <label class="btn btn-sm" style="cursor:pointer;">
+            <i class="fas fa-image"></i> Image
+            <input type="file" name="image" accept="image/*" style="display:none;" onchange="this.closest('form').querySelector('.img-name').textContent=this.files[0]?.name||''">
+          </label>
+          <span class="img-name" style="font-size:12px; color:var(--text-muted); align-self:center;"></span>
+          <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-paper-plane"></i> Post</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Posts -->
+    {% for post in posts %}
+      <div class="post-card" id="post-{{ post.id }}">
+        <div class="post-header">
+          <a href="{% url 'user_profile' post.user.username %}">
+            <div class="post-avatar">
+              {% if post.user.profile_pic %}
+                <img src="{{ post.user.profile_pic.url }}" alt="">
+              {% else %}
+                {{ post.user.username|first|upper }}
+              {% endif %}
+            </div>
+          </a>
+          <div class="post-meta">
+            <div class="post-username">
+              <a href="{% url 'user_profile' post.user.username %}">{{ post.user.username }}</a>
+              {% if post.user.branch %}
+                <span style="font-weight:400; color:var(--text-muted);">• {{ post.user.branch }}</span>
+              {% endif %}
+            </div>
+            <div class="post-info">{{ post.created_at|timesince }} ago</div>
+          </div>
+          {% if request.user == post.user %}
+            <div class="post-delete">
+              <a href="{% url 'delete_post' post.id %}" class="btn btn-sm"
+                onclick="return confirm('Delete this post?')"
+                style="color:var(--danger); border-color:var(--danger);">
+                <i class="fas fa-trash"></i>
+              </a>
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="post-body">{{ post.content }}</div>
+        {% if post.image %}
+          <img src="{{ post.image.url }}" alt="Post image" class="post-image">
+        {% endif %}
+
+        <div class="post-actions">
+          <button class="like-btn {% if request.user in post.likes.all %}liked{% endif %}"
+            onclick="likePost({{ post.id }}, this)">
+            <i class="fas fa-heart"></i>
+            <span class="like-count">{{ post.like_count }}</span>
+          </button>
+          <button class="comment-btn" onclick="toggleComments({{ post.id }})">
+            <i class="fas fa-comment"></i>
+            {{ post.comments.count }} Comments
+          </button>
+        </div>
+
+        <!-- Comments -->
+        <div class="comments-section" id="comments-{{ post.id }}">
+          <div id="comment-list-{{ post.id }}">
+            {% for comment in post.comments.all %}
+              <div class="comment-item">
+                <div class="comment-avatar">{{ comment.user.username|first|upper }}</div>
+                <div class="comment-bubble">
+                  <div class="comment-name">{{ comment.user.username }}</div>
+                  <div class="comment-text">{{ comment.content }}</div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="comment-form">
+            <input type="text" id="comment-input-{{ post.id }}" placeholder="Add a comment...">
+            <button class="btn btn-primary btn-sm" onclick="addComment({{ post.id }})">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="empty-state card">
+        <i class="fas fa-stream"></i>
+        <p>No posts yet. Be the first to share something!</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Right Sidebar Widgets -->
+  <div>
+    <!-- User quick card -->
+    <div class="sidebar-widget">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+        <div class="post-avatar" style="width:48px; height:48px; font-size:18px;">
+          {% if request.user.profile_pic %}
+            <img src="{{ request.user.profile_pic.url }}" alt="">
+          {% else %}
+            {{ request.user.username|first|upper }}
+          {% endif %}
+        </div>
+        <div>
+          <div style="font-weight:600;">{{ request.user.username }}</div>
+          <div style="font-size:12px; color:var(--text-muted);">
+            {{ request.user.branch|default:"Student" }}
+            {% if request.user.college %} • {{ request.user.college }}{% endif %}
+          </div>
+        </div>
+      </div>
+      <a href="{% url 'profile' %}" class="btn btn-sm btn-full">View My Profile</a>
+    </div>
+
+    <!-- Trending Groups -->
+    <div class="sidebar-widget">
+      <div class="widget-title"><i class="fas fa-fire"></i> Trending Groups</div>
+      {% for group in request.user.joined_groups.all|slice:":5" %}
+        <div class="group-item">
+          <a href="{% url 'group_detail' group.id %}" class="group-item-name">{{ group.name }}</a>
+          <span class="live-badge"><span class="live-dot"></span> {{ group.member_count }}</span>
+        </div>
+      {% empty %}
+        <div style="font-size:13px; color:var(--text-muted);">
+          <a href="{% url 'group_list' %}" style="color:var(--accent);">Join a group</a> to see it here.
+        </div>
+      {% endfor %}
+      <a href="{% url 'group_list' %}" class="btn btn-sm btn-full" style="margin-top:10px;">Explore Groups</a>
+    </div>
+
+    <!-- Active Projects -->
+    <div class="sidebar-widget">
+      <div class="widget-title"><i class="fas fa-rocket"></i> My Projects</div>
+      {% for project in request.user.joined_projects.all|slice:":4" %}
+        <div class="group-item">
+          <a href="{% url 'project_detail' project.id %}" class="group-item-name">{{ project.name }}</a>
+          <span class="status-badge status-{{ project.status }}">{{ project.get_status_display }}</span>
+        </div>
+      {% empty %}
+        <div style="font-size:13px; color:var(--text-muted);">
+          <a href="{% url 'project_list' %}" style="color:var(--accent);">Browse projects</a>
+        </div>
+      {% endfor %}
+      <a href="{% url 'project_create' %}" class="btn btn-sm btn-full" style="margin-top:10px;">+ New Project</a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

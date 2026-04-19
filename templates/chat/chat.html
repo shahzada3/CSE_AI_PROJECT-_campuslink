@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% block title %}Messages – CampusLink{% endblock %}
+{% block content %}
+
+{% if active_chat %}
+  <input type="hidden" id="ws-receiver-id" value="{{ active_chat.id }}">
+  <input type="hidden" id="ws-current-user-id" value="{{ request.user.id }}">
+{% endif %}
+
+<div class="chat-wrapper">
+
+  <!-- Contacts List -->
+  <div class="chat-contacts">
+    <div class="chat-contacts-header">
+      <h3>Messages</h3>
+      <input type="text" class="chat-search" placeholder="Search people..." id="contact-search"
+        oninput="filterContacts(this.value)">
+    </div>
+    <div class="contacts-list" id="contacts-list">
+      {% for u in chat_users %}
+        <a href="{% url 'chat_room' u.id %}" style="text-decoration:none;">
+          <div class="contact-item {% if active_chat and active_chat.id == u.id %}active{% endif %}" data-name="{{ u.username|lower }}">
+            <div class="contact-avatar">
+              {% if u.profile_pic %}
+                <img src="{{ u.profile_pic.url }}" alt="">
+              {% else %}
+                {{ u.username|first|upper }}
+              {% endif %}
+            </div>
+            <div>
+              <div class="contact-name">{{ u.username }}</div>
+              <div class="contact-preview">{{ u.branch|default:"Student" }}</div>
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+
+      {% if not chat_users %}
+        <div style="padding:20px; font-size:13px; color:var(--text-muted); text-align:center;">
+          No conversations yet.<br>
+          <a href="{% url 'people' %}" style="color:var(--accent);">Find people</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- All Users to Start New Chat -->
+    <div style="padding:12px 16px; border-top:1px solid var(--border);">
+      <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">All Students</div>
+      {% for u in all_users|slice:":10" %}
+        <a href="{% url 'chat_room' u.id %}" style="text-decoration:none;">
+          <div class="contact-item {% if active_chat and active_chat.id == u.id %}active{% endif %}">
+            <div class="contact-avatar" style="width:28px; height:28px; font-size:11px;">
+              {% if u.profile_pic %}
+                <img src="{{ u.profile_pic.url }}" alt="">
+              {% else %}
+                {{ u.username|first|upper }}
+              {% endif %}
+            </div>
+            <div class="contact-name" style="font-size:12px;">{{ u.username }}</div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Chat Window -->
+  <div class="chat-window">
+    {% if active_chat %}
+      <!-- Header -->
+      <div class="chat-window-header">
+        <div class="contact-avatar">
+          {% if active_chat.profile_pic %}
+            <img src="{{ active_chat.profile_pic.url }}" alt="">
+          {% else %}
+            {{ active_chat.username|first|upper }}
+          {% endif %}
+        </div>
+        <div>
+          <div style="font-weight:600; font-size:14px;">{{ active_chat.username }}</div>
+          <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:4px;">
+            <span class="online-dot"></span>
+            {{ active_chat.branch|default:"Student" }}
+            {% if active_chat.college %} • {{ active_chat.college }}{% endif %}
+          </div>
+        </div>
+        <div style="margin-left:auto;">
+          <a href="{% url 'user_profile' active_chat.username %}" class="btn btn-sm">
+            <i class="fas fa-user"></i> Profile
+          </a>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="chat-messages" id="chat-messages">
+        {% for msg in messages %}
+          <div class="msg-bubble {% if msg.sender == request.user %}sent{% else %}received{% endif %}">
+            <div class="msg-text">{{ msg.content }}</div>
+            <div class="msg-time">{{ msg.timestamp|date:"H:i" }}</div>
+          </div>
+        {% empty %}
+          <div style="text-align:center; color:var(--text-muted); font-size:13px; margin-top:40px;">
+            <i class="fas fa-comment-dots" style="font-size:32px; display:block; margin-bottom:10px; opacity:0.3;"></i>
+            Say hi to {{ active_chat.username }}!
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Input -->
+      <div class="chat-input-area">
+        <input type="text" id="chat-message-input" class="chat-input"
+          placeholder="Type a message... (Enter to send)">
+        <button class="btn btn-primary" id="chat-send-btn">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+
+    {% else %}
+      <!-- Empty state -->
+      <div class="chat-empty">
+        <i class="fas fa-comments"></i>
+        <p>Select a conversation to start chatting</p>
+        <a href="{% url 'people' %}" class="btn btn-primary" style="margin-top:8px;">
+          <i class="fas fa-user-friends"></i> Find People
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+function filterContacts(query) {
+  const items = document.querySelectorAll('#contacts-list .contact-item[data-name]');
+  items.forEach(item => {
+    item.closest('a').style.display = item.dataset.name.includes(query.toLowerCase()) ? '' : 'none';
+  });
+}
+</script>
+<script>
+(function() {
+  const receiverEl = document.getElementById("ws-receiver-id");
+  const currentUserEl = document.getElementById("ws-current-user-id");
+  if (!receiverEl) return;
+
+  const receiverId = receiverEl.value;
+  const currentUserId = parseInt(currentUserEl ? currentUserEl.value : 0);
+
+  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+  const socket = new WebSocket(protocol + "://" + window.location.host + "/ws/chat/" + receiverId + "/");
+
+  const input = document.getElementById("chat-message-input");
+  const sendBtn = document.getElementById("chat-send-btn");
+  const chatBox = document.getElementById("chat-messages");
+
+  function appendMessage(message, isSent, username) {
+    const div = document.createElement("div");
+    div.className = "msg-bubble " + (isSent ? "sent" : "received");
+    const now = new Date();
+    const time = now.getHours().toString().padStart(2,"0") + ":" + now.getMinutes().toString().padStart(2,"0");
+    div.innerHTML = '<div class="msg-text">' + escapeHtml(message) + '</div><div class="msg-time">' + time + '</div>';
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function escapeHtml(text) {
+    const d = document.createElement("div");
+    d.appendChild(document.createTextNode(text));
+    return d.innerHTML;
+  }
+
+  // onmessage: only show if it came from the OTHER user
+  // (sender already sees it immediately via sendMessage)
+  socket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    if (data.sender_id !== currentUserId) {
+      appendMessage(data.message, false, data.username);
+    }
+  };
+
+  function sendMessage() {
+    const message = input.value.trim();
+    if (!message || socket.readyState !== WebSocket.OPEN) return;
+    socket.send(JSON.stringify({ message: message }));
+    appendMessage(message, true);
+    input.value = "";
+  }
+
+  if (sendBtn) sendBtn.addEventListener("click", sendMessage);
+  if (input) {
+    input.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+  }
+
+  socket.onopen = () => console.log("WebSocket connected");
+  socket.onerror = (e) => console.error("WebSocket error", e);
+  socket.onclose = () => console.log("WebSocket closed");
+})();
+</script>
+{% endblock %}

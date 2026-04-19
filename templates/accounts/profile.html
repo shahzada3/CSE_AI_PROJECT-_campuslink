@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}{{ profile_user.username }} – CampusLink{% endblock %}
+{% block content %}
+<div class="profile-layout">
+
+  <!-- Left: Profile Card -->
+  <div>
+    <div class="profile-card">
+      <div class="profile-cover"></div>
+      <div class="profile-body">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar">
+            {% if profile_user.profile_pic %}
+              <img src="{{ profile_user.profile_pic.url }}" alt="{{ profile_user.username }}">
+            {% else %}
+              {{ profile_user.username|first|upper }}
+            {% endif %}
+          </div>
+        </div>
+        <div class="profile-name">
+          {{ profile_user.get_full_name|default:profile_user.username }}
+        </div>
+        <div class="profile-title">
+          {% if profile_user.branch %}{{ profile_user.branch }}{% endif %}
+          {% if profile_user.year %} • {{ profile_user.year }}{% endif %}
+          {% if profile_user.college %} • {{ profile_user.college }}{% endif %}
+        </div>
+
+        {% if profile_user.bio %}
+          <div class="profile-bio">{{ profile_user.bio }}</div>
+        {% endif %}
+
+        <div class="profile-stats">
+          <div class="stat-item">
+            <div class="stat-num">{{ profile_user.posts.count }}</div>
+            <div class="stat-label">Posts</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num">{{ profile_user.joined_projects.count }}</div>
+            <div class="stat-label">Projects</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num">{{ profile_user.joined_groups.count }}</div>
+            <div class="stat-label">Groups</div>
+          </div>
+        </div>
+
+        {% if profile_user.skills_list %}
+          <div style="margin-top:12px;">
+            <div class="form-label" style="margin-bottom:8px;">Skills</div>
+            <div class="skills-list">
+              {% for skill in profile_user.skills_list %}
+                {% if skill %}
+                  <span class="skill-tag">{{ skill.strip }}</span>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+
+        <div class="profile-links">
+          {% if profile_user.github %}
+            <a href="{{ profile_user.github }}" target="_blank" class="profile-link-btn">
+              <i class="fab fa-github"></i> GitHub
+            </a>
+          {% endif %}
+          {% if profile_user.linkedin %}
+            <a href="{{ profile_user.linkedin }}" target="_blank" class="profile-link-btn">
+              <i class="fab fa-linkedin"></i> LinkedIn
+            </a>
+          {% endif %}
+        </div>
+
+        {% if request.user == profile_user %}
+          <div style="margin-top:16px; display:flex; gap:8px;">
+            <a href="{% url 'profile_edit' %}" class="btn btn-primary btn-sm">
+              <i class="fas fa-edit"></i> Edit Profile
+            </a>
+          </div>
+        {% else %}
+          <div style="margin-top:16px;">
+            <a href="{% url 'chat_room' profile_user.id %}" class="btn btn-primary btn-sm">
+              <i class="fas fa-comment"></i> Message
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Posts -->
+  <div>
+    <div class="section-label">Posts by {{ profile_user.username }}</div>
+    {% for post in profile_user.posts.all %}
+      <div class="post-card">
+        <div class="post-header">
+          <div class="post-avatar">{{ profile_user.username|first|upper }}</div>
+          <div class="post-meta">
+            <div class="post-username">{{ profile_user.username }}</div>
+            <div class="post-info">{{ post.created_at|date:"M d, Y" }}</div>
+          </div>
+        </div>
+        <div class="post-body">{{ post.content }}</div>
+        {% if post.image %}
+          <img src="{{ post.image.url }}" alt="Post image" class="post-image">
+        {% endif %}
+        <div class="post-actions">
+          <button class="like-btn {% if request.user in post.likes.all %}liked{% endif %}"
+            onclick="likePost({{ post.id }}, this)">
+            <i class="fas fa-heart"></i>
+            <span class="like-count">{{ post.like_count }}</span>
+          </button>
+        </div>
+      </div>
+    {% empty %}
+      <div class="empty-state">
+        <i class="fas fa-file-alt"></i>
+        <p>No posts yet.</p>
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

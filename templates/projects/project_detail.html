@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.name }} – CampusLink{% endblock %}
+{% block content %}
+<div class="page-header-row">
+  <div>
+    <a href="{% url 'project_list' %}" style="color:var(--text-muted); font-size:13px;">
+      <i class="fas fa-arrow-left"></i> Projects
+    </a>
+    <h1 style="margin-top:4px;">{{ project.name }}</h1>
+    <p>
+      <span class="status-badge status-{{ project.status }}">{{ project.get_status_display }}</span>
+      &nbsp;by {{ project.creator.username }}
+      &nbsp;•&nbsp; {{ project.member_count }} members
+    </p>
+  </div>
+  <div style="display:flex; gap:8px;">
+    {% if not is_member %}
+      <a href="{% url 'join_project' project.id %}" class="btn btn-primary">Join Project</a>
+    {% endif %}
+    {% if project.github_link %}
+      <a href="{{ project.github_link }}" target="_blank" class="btn">
+        <i class="fab fa-github"></i> GitHub
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 300px; gap:20px;">
+  <!-- Main -->
+  <div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="widget-title"><i class="fas fa-info-circle"></i> About</div>
+      <p style="font-size:14px; color:var(--text-secondary); line-height:1.7;">{{ project.description }}</p>
+      {% if project.tech_stack %}
+        <div class="tech-tags" style="margin-top:12px;">
+          {% for tech in project.tech_stack.split ',' %}
+            {% if tech.strip %}<span class="tech-tag">{{ tech.strip }}</span>{% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Tasks -->
+    <div class="card">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <div class="widget-title" style="margin-bottom:0;"><i class="fas fa-tasks"></i> Tasks</div>
+        {% if is_member %}
+          <button class="btn btn-sm btn-primary" onclick="document.getElementById('add-task-form').classList.toggle('hidden')">
+            <i class="fas fa-plus"></i> Add Task
+          </button>
+        {% endif %}
+      </div>
+
+      {% if is_member %}
+        <div id="add-task-form" class="hidden" style="margin-bottom:16px; padding:14px; background:var(--bg-secondary); border-radius:var(--radius-sm);">
+          <form method="post">
+            {% csrf_token %}
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+              <div>
+                <label class="form-label">Task Title</label>
+                <input type="text" name="title" class="form-control" placeholder="Task name" required>
+              </div>
+              <div>
+                <label class="form-label">Assign To</label>
+                <select name="assigned_to" class="form-control">
+                  <option value="">-- Unassigned --</option>
+                  {% for member in project.members.all %}
+                    <option value="{{ member.id }}">{{ member.username }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Priority</label>
+                <select name="priority" class="form-control">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Task</button>
+          </form>
+        </div>
+      {% endif %}
+
+      <div class="task-list">
+        {% for task in tasks %}
+          <div class="task-item {% if task.is_done %}done{% endif %}">
+            <a href="{% url 'toggle_task' task.id %}" class="task-check">
+              {% if task.is_done %}<i class="fas fa-check" style="font-size:9px;"></i>{% endif %}
+            </a>
+            <div class="task-title">{{ task.title }}</div>
+            {% if task.assigned_to %}
+              <div class="task-assignee">@{{ task.assigned_to.username }}</div>
+            {% endif %}
+            <span class="priority-{{ task.priority }}" style="font-size:11px;">
+              <i class="fas fa-flag"></i> {{ task.get_priority_display }}
+            </span>
+          </div>
+        {% empty %}
+          <div class="empty-state" style="padding:24px;">
+            <i class="fas fa-clipboard-list"></i>
+            <p>No tasks yet.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div>
+    <div class="card">
+      <div class="widget-title"><i class="fas fa-users"></i> Members</div>
+      {% for member in project.members.all %}
+        <div class="group-item">
+          <a href="{% url 'user_profile' member.username %}" style="display:flex; align-items:center; gap:8px;">
+            <div class="comment-avatar" style="width:28px; height:28px;">{{ member.username|first|upper }}</div>
+            <div>
+              <div style="font-size:13px; font-weight:500;">{{ member.username }}</div>
+              <div style="font-size:11px; color:var(--text-muted);">{{ member.branch|default:"Student" }}</div>
+            </div>
+          </a>
+          {% if member == project.creator %}
+            <span style="font-size:10px; background:var(--accent-light); color:var(--accent); padding:2px 6px; border-radius:20px; margin-left:auto;">Lead</span>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <div class="widget-title"><i class="fas fa-chart-pie"></i> Progress</div>
+      {% with total=tasks.count done=tasks|length %}
+        {% if total > 0 %}
+          {% widthratio tasks|dictsortreversed:"is_done"|first.is_done|yesno:"1,0" 1 100 as pct %}
+          <div style="font-size:13px; color:var(--text-secondary);">
+            {{ tasks|dictsortreversed:"is_done"|length }} / {{ total }} tasks complete
+          </div>
+          <div style="background:var(--border); border-radius:20px; height:6px; margin-top:8px;">
+            <div style="background:var(--accent); height:6px; border-radius:20px; width:{{ pct }}%;"></div>
+          </div>
+        {% else %}
+          <div style="font-size:13px; color:var(--text-muted);">No tasks yet.</div>
+        {% endif %}
+      {% endwith %}
+    </div>
+  </div>
+</div>
+
+<style>
+.hidden { display: none !important; }
+</style>
+{% endblock %}

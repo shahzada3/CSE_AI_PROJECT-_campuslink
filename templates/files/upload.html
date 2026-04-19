@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}File Sharing – CampusLink{% endblock %}
+{% block content %}
+<div class="page-header-row">
+  <div class="page-header">
+    <h1>File Sharing</h1>
+    <p>Share notes, PDFs, and resources with your campus</p>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 320px;gap:24px;">
+  <div>
+    <form method="get" class="search-bar">
+      <input type="text" name="q" class="search-input" placeholder="Search files..." value="{{ query }}">
+      <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
+    </form>
+
+    {% if files %}
+      <div class="files-grid">
+        {% for file in files %}
+          <div class="file-card">
+            <div class="file-icon {{ file.file_type }}">
+              {% if file.file_type == 'pdf' %}<i class="fas fa-file-pdf"></i>
+              {% elif file.file_type == 'doc' %}<i class="fas fa-file-word"></i>
+              {% elif file.file_type == 'img' %}<i class="fas fa-file-image"></i>
+              {% else %}<i class="fas fa-file"></i>{% endif %}
+            </div>
+            <div class="file-name">{{ file.title }}</div>
+            <div class="file-meta">
+              By {{ file.user.username }} &nbsp;•&nbsp;
+              {{ file.uploaded_at|date:"M d" }} &nbsp;•&nbsp;
+              <i class="fas fa-download"></i> {{ file.download_count }}
+            </div>
+            {% if file.description %}
+              <div style="font-size:12px;color:var(--text-muted);">{{ file.description|truncatechars:60 }}</div>
+            {% endif %}
+            <div class="file-actions">
+              <a href="{% url 'file_download' file.id %}" class="btn btn-sm btn-primary">
+                <i class="fas fa-download"></i> Download
+              </a>
+              {% if file.user == request.user %}
+                <a href="{% url 'file_delete' file.id %}" class="btn btn-sm btn-danger"
+                  onclick="return confirm('Delete this file?')">
+                  <i class="fas fa-trash"></i>
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state card">
+        <i class="fas fa-file-upload"></i>
+        <p>No files yet{% if query %} for "{{ query }}"{% endif %}. Upload the first one!</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <div>
+    <div class="card" style="position:sticky;top:20px;">
+      <div class="widget-title"><i class="fas fa-cloud-upload-alt"></i> Upload File</div>
+      <form method="post" action="{% url 'file_upload' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Title *</label>
+          <input type="text" name="title" class="form-control" placeholder="e.g. Data Structures Notes" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">File *</label>
+          <div class="upload-zone" onclick="this.querySelector('input').click()">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px;" id="upload-name">Click to choose file</p>
+            <p style="font-size:11px;color:var(--text-muted);">PDF, DOC, images and more</p>
+            <input type="file" name="file" required style="display:none;"
+              onchange="document.getElementById('upload-name').textContent=this.files[0].name">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" rows="2" placeholder="Brief description..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">
+          <i class="fas fa-upload"></i> Upload File
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

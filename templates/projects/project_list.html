@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}Projects – CampusLink{% endblock %}
+
+{% block content %}
+<div class="page-header-row">
+  <div class="page-header">
+    <h1>Projects</h1>
+    <p>Collaborate on academic and personal projects</p>
+  </div>
+  <a href="{% url 'project_create' %}" class="btn btn-primary">
+    <i class="fas fa-plus"></i> New Project
+  </a>
+</div>
+
+{# ================= MY PROJECTS ================= #}
+{% if my_projects %}
+  <div class="section-label">My Projects</div>
+  <div class="projects-grid">
+    {% for project in my_projects %}
+      <div class="project-card">
+        
+        <div class="project-card-header">
+          <div class="project-name">{{ project.name }}</div>
+          <span class="status-badge status-{{ project.status }}">
+            {{ project.get_status_display }}
+          </span>
+        </div>
+
+        <div class="project-desc">{{ project.description }}</div>
+
+        {% if project.tech_stack %}
+          <div class="tech-tags">
+            {% for tech in project.get_tech_list %}
+              <span class="tech-tag">{{ tech }}</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="project-footer">
+          <span class="member-count">
+            <i class="fas fa-user"></i> {{ project.member_count }} members
+          </span>
+          <a href="{% url 'project_detail' project.id %}" class="btn btn-sm btn-primary">
+            Open
+          </a>
+        </div>
+
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+
+{# ================= EXPLORE PROJECTS ================= #}
+{% if explore %}
+  <div class="section-label" style="margin-top:28px;">Explore Projects</div>
+  <div class="projects-grid">
+
+    {% for project in explore %}
+      <div class="project-card">
+
+        <div class="project-card-header">
+          <div class="project-name">{{ project.name }}</div>
+          <span class="status-badge status-{{ project.status }}">
+            {{ project.get_status_display }}
+          </span>
+        </div>
+
+        <div class="project-desc">{{ project.description }}</div>
+
+        {% if project.tech_stack %}
+          <div class="tech-tags">
+            {% for tech in project.get_tech_list %}
+              <span class="tech-tag">{{ tech }}</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="project-footer">
+          <span class="member-count">
+            <i class="fas fa-user"></i> {{ project.member_count }} members
+          </span>
+          <a href="{% url 'join_project' project.id %}" class="btn btn-sm btn-primary">
+            Join
+          </a>
+        </div>
+
+      </div>
+    {% endfor %}
+
+  </div>
+{% endif %}
+
+
+{# ================= EMPTY STATE ================= #}
+{% if not my_projects and not explore %}
+  <div class="empty-state card">
+    <i class="fas fa-folder-open"></i>
+    <p>No projects yet. Create the first one!</p>
+    <a href="{% url 'project_create' %}" class="btn btn-primary" style="margin-top:12px;">
+      Create Project
+    </a>
+  </div>
+{% endif %}
+
+{% endblock %}

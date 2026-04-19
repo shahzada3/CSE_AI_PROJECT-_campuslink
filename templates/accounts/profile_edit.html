@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Edit Profile – CampusLink{% endblock %}
+{% block content %}
+<div style="max-width:600px; margin:0 auto;">
+  <div class="page-header-row">
+    <div class="page-header">
+      <h1>Edit Profile</h1>
+      <p>Update your info so others can find and connect with you</p>
+    </div>
+    <a href="{% url 'profile' %}" class="btn"><i class="fas fa-arrow-left"></i> Back</a>
+  </div>
+
+  <div class="card">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input type="text" name="first_name" class="form-control" value="{{ form.first_name.value|default:'' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input type="text" name="last_name" class="form-control" value="{{ form.last_name.value|default:'' }}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Bio</label>
+        <textarea name="bio" class="form-control" rows="3" placeholder="Tell everyone about yourself...">{{ form.bio.value|default:'' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Profile Picture</label>
+        <input type="file" name="profile_pic" class="form-control" accept="image/*">
+        {% if request.user.profile_pic %}
+          <div style="margin-top:8px; font-size:12px; color:var(--text-muted);">Current: {{ request.user.profile_pic }}</div>
+        {% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Skills (comma separated)</label>
+        <input type="text" name="skills" class="form-control" placeholder="e.g. Python, Django, React, ML" value="{{ form.skills.value|default:'' }}">
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;">
+        <div class="form-group">
+          <label class="form-label">College</label>
+          <input type="text" name="college" class="form-control" value="{{ form.college.value|default:'' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Branch</label>
+          <input type="text" name="branch" class="form-control" placeholder="e.g. CSE" value="{{ form.branch.value|default:'' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Year</label>
+          <input type="text" name="year" class="form-control" placeholder="e.g. Year 3" value="{{ form.year.value|default:'' }}">
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <div class="form-group">
+          <label class="form-label">GitHub URL</label>
+          <input type="url" name="github" class="form-control" placeholder="https://github.com/..." value="{{ form.github.value|default:'' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">LinkedIn URL</label>
+          <input type="url" name="linkedin" class="form-control" placeholder="https://linkedin.com/in/..." value="{{ form.linkedin.value|default:'' }}">
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:8px;">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+        <a href="{% url 'profile' %}" class="btn">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
